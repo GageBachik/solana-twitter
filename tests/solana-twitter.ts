@@ -35,3 +35,30 @@ it("can send a new tweet", async () => {
   );
   assert.ok(tweetAccount.timestamp);
 });
+
+it("cannot provide a topic with more than 50 characters", async () => {
+  // Configure the client to use the local cluster.
+  anchor.setProvider(anchor.Provider.env());
+  const program = anchor.workspace.SolanaTwitter as Program<SolanaTwitter>;
+  const tweet = anchor.web3.Keypair.generate();
+  try {
+    const tweet = anchor.web3.Keypair.generate();
+    const topicWith51Chars = "x".repeat(51);
+    await program.rpc.sendTweet(topicWith51Chars, "Hummus, am I right?", {
+      accounts: {
+        tweet: tweet.publicKey,
+        author: program.provider.wallet.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      },
+      signers: [tweet],
+    });
+  } catch (error) {
+    assert.equal(
+      error.msg,
+      "The provided topic should be 16 characters long maximum."
+    );
+    return;
+  }
+
+  assert.fail("The instruction should have failed with a 51-character topic.");
+});
